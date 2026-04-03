@@ -1,8 +1,8 @@
-#include "Ultrasonic.h" //Ultrasonic Sensor Library
-#include <Wire.h> //I2C Communication Library
-#include "rgb_lcd.h" // RGB LCD Library
-#include <Grove_LED_Bar.h> // LED Bar Library
-#include <Ciao.h> // Communication Library (allowing 
+#include "Ultrasonic.h"
+#include <Wire.h>
+#include "rgb_lcd.h"
+#include <Grove_LED_Bar.h>
+#include <Ciao.h>
 
 Ultrasonic UltraSonic(7);
 Grove_LED_Bar LEDBar(9, 8, 0);
@@ -11,24 +11,16 @@ rgb_lcd LCD;
 const float Depth_Max PROGMEM = 154.70000;
 const float Depth_Max_Sensor PROGMEM = 166.00000;
 
-//Setup of Sketch
-
 void setup()
 {
-  //initialize Ciao - this allows communication with the Internet
   Ciao.begin();
-
-  //initialize LCD screen, set Columns=16 and Rows=2
   LCD.begin(16, 2);
   LCD.setRGB(0, 0, 0);
-
-  //initialize the LED bar
   LEDBar.begin();
 }
 
 void loop()
 {
-
   float wL = 0.00000;
   
   for(float counter = 0; counter < 300; counter++)
@@ -42,7 +34,6 @@ void loop()
 
   float waterPercent = 0.00000;
   waterPercent = waterLevel * 100 / Depth_Max;
-
   String Percent = "Percent: " + String(waterPercent, 1) + "%";
   String Level =   "Level  : " + String(waterLevel, 1) + "cm";
 
@@ -76,13 +67,10 @@ void updateLEDBar(float waterPercent)
 }
 
 void updateThingSpeak(int waterLevel)
-
 { 
-
-  char* CONNECTOR_TS = (char*) "rest"; //connector type
-  char* SERVER_ADDR_TS = (char*) "api.thingspeak.com"; //API URL
-  char* APIKEY_TS = (char*) "insertcorrectyAPIkey"; //API Key for normal data submission
-
+  char* CONNECTOR_TS = (char*) "rest";
+  char* SERVER_ADDR_TS = (char*) "api.thingspeak.com";
+  char* APIKEY_TS = (char*) "insertcorrectyAPIkey";
   
   String uri = "/update?api_key=";
   uri += APIKEY_TS;
@@ -91,7 +79,6 @@ void updateThingSpeak(int waterLevel)
 
   CiaoData data = Ciao.write(CONNECTOR_TS, SERVER_ADDR_TS, uri);
 }
-
 
 void updateDatabase(String value, String sensor)
 {
@@ -106,6 +93,3 @@ void updateDatabase(String value, String sensor)
 
   CiaoData data = Ciao.write(CONNECTOR_TS, SERVER_ADDR_DB, uri, METHOD);
 }
-
-
-
