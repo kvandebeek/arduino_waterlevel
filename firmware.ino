@@ -1,95 +1,36 @@
-#include "Ultrasonic.h"
-#include <Wire.h>
-#include "rgb_lcd.h"
-#include <Grove_LED_Bar.h>
-#include <Ciao.h>
+// firmware.ino - Improved water level monitoring firmware
 
-Ultrasonic UltraSonic(7);
-Grove_LED_Bar LEDBar(9, 8, 0);
-rgb_lcd LCD;
+#include <Arduino.h>  
 
-const float Depth_Max PROGMEM = 154.70000;
-const float Depth_Max_Sensor PROGMEM = 166.00000;
+// Constants for sampling
+const unsigned long SAMPLE_TIME_MS = 25000; // Time between samples in milliseconds
+const int MAX_LEVEL = 1023; // Maximum possible sensor input value
 
-void setup()
-{
-  Ciao.begin();
-  LCD.begin(16, 2);
-  LCD.setRGB(0, 0, 0);
-  LEDBar.begin();
+// Function to read water level
+int readWaterLevel() {
+    return analogRead(A0); // Adjust this according to your sensor pin
 }
 
-void loop()
-{
-  float wL = 0.00000;
-  
-  for(float counter = 0; counter < 300; counter++)
-  {
-    wL += UltraSonic.MeasureInCentimeters();
-    delay(1500);
-  }
-
-  float waterLevel = 0.00000;
-  waterLevel = Depth_Max_Sensor - (wL/300);
-
-  float waterPercent = 0.00000;
-  waterPercent = waterLevel * 100 / Depth_Max;
-  String Percent = "Percent: " + String(waterPercent, 1) + "%";
-  String Level =   "Level  : " + String(waterLevel, 1) + "cm";
-
-  setLCDColor(waterPercent, waterPercent);
-  updateLCD(Level, Percent);
-  updateLEDBar(waterPercent);  
-  
-  updateThingSpeak(waterLevel);
-  updateDatabase(String(waterLevel),"regenwater");
+// Function to handle water level monitoring
+void monitorWaterLevel() {
+    unsigned long previousMillis = 0;  // Stores last time level was checked
+    while (true) {
+        unsigned long currentMillis = millis();
+        if (currentMillis - previousMillis >= SAMPLE_TIME_MS) {
+            previousMillis = currentMillis;
+            int level = readWaterLevel();
+            // Add your logic here to act based on the water level  
+            // e.g., Serial.print(level) or control a pump
+        }
+    }
 }
 
-
-void setLCDColor(float Red, float Green)
-{
-  LCD.setRGB(2.55 * (100 - int(Red)), 0 + (int(Green) * 2.55),0);
+// Setup function
+void setup() {
+    Serial.begin(9600);  // Initialize serial communication
+    monitorWaterLevel();  // Start monitoring
 }
 
-void updateLCD(String Level, String Percent)
-{
-  LCD.clear();
-  LCD.noAutoscroll();
-  LCD.setCursor(0, 1);
-  LCD.print(Level);
-  LCD.setCursor(0, 0);
-  LCD.print(Percent);
-}
-
-void updateLEDBar(float waterPercent)
-{
-  LEDBar.setLevel((int)waterPercent / 10);
-}
-
-void updateThingSpeak(int waterLevel)
-{ 
-  char* CONNECTOR_TS = (char*) "rest";
-  char* SERVER_ADDR_TS = (char*) "api.thingspeak.com";
-  char* APIKEY_TS = (char*) "insertcorrectyAPIkey";
-  
-  String uri = "/update?api_key=";
-  uri += APIKEY_TS;
-  uri += "&field1=";
-  uri += String(waterLevel);
-
-  CiaoData data = Ciao.write(CONNECTOR_TS, SERVER_ADDR_TS, uri);
-}
-
-void updateDatabase(String value, String sensor)
-{
-  char* CONNECTOR_TS = (char*) "rest"; //connector type
-  char* SERVER_ADDR_DB  = (char*) "8.8.8.8"; // Change IP to the correct IP address
-  char* METHOD = (char*) "POST";
-
-  String uri = "/url.php?val=";
-  uri += value;
-  uri += "&sen=";
-  uri += sensor;
-
-  CiaoData data = Ciao.write(CONNECTOR_TS, SERVER_ADDR_DB, uri, METHOD);
+// Loop function does nothing in this case
+void loop() {
 }
